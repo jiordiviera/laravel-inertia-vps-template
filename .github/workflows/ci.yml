@@ -32,21 +32,38 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Detect Laravel application
+        id: app
+        run: |
+          if test -f composer.json && test -f composer.lock && test -f package.json && test -f pnpm-lock.yaml && test -f artisan; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Infrastructure-only template: application checks skipped."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: shivammathur/setup-php@v2
+        if: steps.app.outputs.ready == 'true'
         with:
           php-version: '8.5'
           extensions: pdo_pgsql, mbstring, intl, bcmath, gd, zip
           tools: composer:v2
           coverage: none
       - uses: pnpm/action-setup@v4
+        if: steps.app.outputs.ready == 'true'
         with:
           version: 12.4.2
       - uses: actions/setup-node@v4
+        if: steps.app.outputs.ready == 'true'
         with:
           node-version: '22'
           cache: pnpm
       - run: composer install --no-interaction --prefer-dist
+        if: steps.app.outputs.ready == 'true'
       - run: pnpm install --frozen-lockfile
+        if: steps.app.outputs.ready == 'true'
       - run: cp .env.example .env && php artisan key:generate
+        if: steps.app.outputs.ready == 'true'
       - run: pnpm run build
+        if: steps.app.outputs.ready == 'true'
       - run: php artisan test
+        if: steps.app.outputs.ready == 'true'
