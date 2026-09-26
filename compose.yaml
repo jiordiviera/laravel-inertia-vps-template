@@ -1,0 +1,36 @@
+name: ${COMPOSE_PROJECT_NAME:-laravel-inertia-app}
+
+x-app: &app
+  build:
+    context: .
+    target: runtime
+  image: ${APP_IMAGE_LOCAL:-laravel-inertia-app:local}
+  env_file:
+    - .env.docker
+  restart: unless-stopped
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
+  volumes:
+    - storage:/app/storage
+
+services:
+  app:
+    <<: *app
+    ports:
+      - '127.0.0.1:${APP_PORT:-8080}:8080'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8080/up']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  queue:
+    <<: *app
+    command: ['php', 'artisan', 'queue:work', '--tries=3', '--max-time=3600', '--sleep=3', '--no-interaction']
+    stop_grace_period: 60s
+  scheduler:
+    <<: *app
+    command: ['php', 'artisan', 'schedule:work']
+
+volumes:
+  storage:

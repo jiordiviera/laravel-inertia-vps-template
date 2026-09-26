@@ -1,0 +1,11 @@
+.git
+.github
+node_modules
+vendor
+.env
+.env.*
+!.env.example
+storage/logs/*
+storage/framework/cache/*
+public/storage
+coverage
